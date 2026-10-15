@@ -23,10 +23,8 @@ API REST para registrar avistamientos de aves. Hecha con **Python 3 + Flask**, y
 
 ## Instalación y ejecución
 
-```bash
-git clone <URL-de-este-repositorio>
-cd api-avistamientos
-```
+git clone https://github.com/JONATHAN349BARRERA/api-avistamientos-.git
+cd api-avistamientos-
 
 **macOS / Linux**
 
