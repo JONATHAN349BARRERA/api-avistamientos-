@@ -1,0 +1,37 @@
+### Peticiones de prueba para la extensión "REST Client" de VS Code.
+### Con la API corriendo (python app.py), hagan clic en "Send Request" sobre cada una.
+
+@base = http://localhost:5000
+
+### Registrar un avistamiento (201)
+POST {{base}}/avistamientos
+Content-Type: application/json
+
+{"especie": "colibrí", "lugar": "Parque Arví", "fecha": "2026-09-29", "observador": "Ana"}
+
+### Registrar con datos faltantes (400)
+POST {{base}}/avistamientos
+Content-Type: application/json
+
+{"especie": "colibrí"}
+
+### Listar todos (200)
+GET {{base}}/avistamientos
+
+### Ver uno (200, o 404 si no existe)
+GET {{base}}/avistamientos/1
+
+### Actualizar (200)
+PUT {{base}}/avistamientos/1
+Content-Type: application/json
+
+{"especie": "tucán", "lugar": "Jardín Botánico", "fecha": "2026-09-30", "observador": "Ana"}
+
+### Resumen por especie (bonus, 200)
+GET {{base}}/avistamientos/resumen
+
+### Eliminar (204)
+DELETE {{base}}/avistamientos/1
+
+### Ver uno que no existe (404)
+GET {{base}}/avistamientos/999
