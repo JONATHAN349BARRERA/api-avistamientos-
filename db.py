@@ -1,4 +1,5 @@
 """Acceso a la base de datos SQLite (módulo sqlite3 de la librería estándar)."""
+from contextlib import closing
 import sqlite3
 
 from flask import current_app, g
@@ -20,7 +21,8 @@ def close_db(_error=None):
 
 def init_db(path):
     """Crea la tabla si no existe."""
-    with sqlite3.connect(path) as conn:
+    # closing() cierra la conexión; el "with conn" solo hace commit.
+    with closing(sqlite3.connect(path)) as conn, conn:
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS avistamientos (

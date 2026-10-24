@@ -14,7 +14,13 @@ API REST para registrar avistamientos de aves. Hecha con **Python 3 + Flask**, y
 | `fecha`      | texto   | Formato `AAAA-MM-DD`                 |
 | `observador` | texto   | Quién lo registró                    |
 
-`especie`, `lugar`, `fecha` y `observador` son obligatorios en `POST` y `PUT`. Si falta alguno, o la fecha no tiene el formato `AAAA-MM-DD`, la API responde `400`.
+**Regla de negocio** (en `validador.py`, clase `ValidadorDeAvistamiento`). Un avistamiento es válido si:
+
+- la `especie` tiene entre 3 y 50 caracteres,
+- la `fecha` tiene formato `AAAA-MM-DD` y no es posterior a hoy,
+- el `lugar` y el `observador` no están vacíos.
+
+Si no es válido, `POST` y `PUT` responden `400` con la lista de errores, cada uno indicando el campo que falló.
 
 ## Requisitos
 
@@ -83,7 +89,7 @@ curl -i -X POST http://localhost:5000/avistamientos \
 ```
 
 ```json
-{"errores":["Falta el campo 'lugar' o está vacío","Falta el campo 'fecha' o está vacío","Falta el campo 'observador' o está vacío"]}
+{"errores":["fecha: debe tener formato AAAA-MM-DD","lugar: no puede estar vacío","observador: no puede estar vacío"]}
 ```
 
 **Listar todos** → `200`
@@ -122,24 +128,48 @@ curl -i http://localhost:5000/avistamientos/resumen
 [{"cantidad":2,"especie":"colibrí"},{"cantidad":1,"especie":"tucán"}]
 ```
 
-## Pruebas (bonus)
+## Pruebas
 
-Pruebas de integración con `pytest` (en `test_app.py`). Cada prueba usa una base de datos temporal, así que no tocan `avistamientos.db`.
+28 pruebas con `pytest`, en la carpeta `tests/`:
+
+- `tests/test_validador.py`: **pruebas unitarias** de la regla de negocio (partición de equivalencia y valores límite), con el stub `RelojFijo` para fijar "hoy".
+- `tests/test_api.py`: **pruebas de integración** de los endpoints por HTTP (`test_client` de Flask) con una base SQLite temporal y nueva para cada prueba.
+- `tests/dobles.py`: dobles de prueba (`RelojFijo`).
+
+Con el entorno virtual activado:
+
+**Correr las pruebas**
 
 ```bash
 python -m pytest -v
 ```
 
+**Generar la cobertura** (líneas y ramas)
+
+```bash
+python -m pytest --cov=app --cov=db --cov=validador --cov-branch --cov-report=term-missing
+```
+
+Para un reporte HTML navegable, agreguen `--cov-report=html` y abran `htmlcov/index.html`.
+
+La justificación de las pruebas está en [docs/justificacion-pruebas.md](docs/justificacion-pruebas.md).
+
 ## Estructura
 
 ```
-app.py            # Rutas de la API y validación
-db.py             # Conexión y creación de la tabla en SQLite
-test_app.py       # Pruebas de integración
-requirements.txt  # Dependencias (Flask, pytest)
+app.py                       # Rutas de la API
+validador.py                 # Regla de negocio (ValidadorDeAvistamiento) y reloj del sistema
+db.py                        # Conexión y creación de la tabla en SQLite
+tests/test_validador.py      # Pruebas unitarias
+tests/test_api.py            # Pruebas de integración
+tests/dobles.py              # Dobles de prueba
+docs/justificacion-pruebas.md  # Documento de justificación
+docs/cobertura.txt           # Último reporte de cobertura
+pruebas.http                 # Peticiones de ejemplo para REST Client (VS Code)
+requirements.txt             # Dependencias (Flask, pytest, pytest-cov)
 ```
 
 ## Uso de IA y créditos
 
-- Se usó **Claude** (Anthropic), modelo **Claude Opus 5.5**, como apoyo para escribir el código, las pruebas y este README. Revisé y entiendo todo el código publicado.
+- Se usó **Claude** (Anthropic), modelo **Claude Opus 5.5**, como apoyo para escribir el código, las pruebas, este README y el documento de justificación. Revisé y entiendo todo el código publicado.
 - Librerías: [Flask](https://flask.palletsprojects.com/) y [pytest](https://docs.pytest.org/).

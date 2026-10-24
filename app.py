@@ -1,39 +1,20 @@
 """API REST para el registro de avistamientos de aves."""
-from datetime import datetime
 import os
 
 from flask import Flask, jsonify, request
 
 from db import close_db, get_db, init_db
+from validador import ValidadorDeAvistamiento
 
 CAMPOS = ("especie", "lugar", "fecha", "observador")
-
-
-def validar(datos):
-    """Devuelve una lista de errores; vacía si los datos son válidos."""
-    if not isinstance(datos, dict):
-        return ["El cuerpo debe ser un objeto JSON"]
-
-    errores = []
-    for campo in CAMPOS:
-        valor = datos.get(campo)
-        if not isinstance(valor, str) or not valor.strip():
-            errores.append(f"Falta el campo '{campo}' o está vacío")
-
-    fecha = datos.get("fecha")
-    if isinstance(fecha, str) and fecha.strip():
-        try:
-            datetime.strptime(fecha, "%Y-%m-%d")
-        except ValueError:
-            errores.append("El campo 'fecha' debe tener formato AAAA-MM-DD")
-    return errores
 
 
 def a_dict(fila):
     return dict(fila)
 
 
-def create_app(database=None):
+def create_app(database=None, reloj=None):
+    """Crea la app. `reloj` permite inyectar un reloj fijo en las pruebas."""
     app = Flask(__name__)
     app.json.ensure_ascii = False  # para que "colibrí" salga con tilde
     app.config["DATABASE"] = database or os.environ.get(
@@ -41,6 +22,7 @@ def create_app(database=None):
     )
     init_db(app.config["DATABASE"])
     app.teardown_appcontext(close_db)
+    validador = ValidadorDeAvistamiento(reloj)
 
     @app.get("/avistamientos")
     def listar():
@@ -68,7 +50,7 @@ def create_app(database=None):
     @app.post("/avistamientos")
     def crear():
         datos = request.get_json(silent=True)
-        errores = validar(datos)
+        errores = validador.validar(datos)
         if errores:
             return jsonify(errores=errores), 400
 
@@ -93,7 +75,7 @@ def create_app(database=None):
             return jsonify(error="Avistamiento no encontrado"), 404
 
         datos = request.get_json(silent=True)
-        errores = validar(datos)
+        errores = validador.validar(datos)
         if errores:
             return jsonify(errores=errores), 400
 
